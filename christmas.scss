@@ -1,0 +1,378 @@
+$sqSize: 16px;
+$contW: 100%;
+$contH: 100%;
+$xSpaces: 13;
+$ySpaces: 13;
+$zSpaces: 19;
+$xAngle: 60deg;
+$zAngle: -45deg;
+$prsp: 800px;
+$dur: 3.5s;
+
+// * Colors *
+$LG: #6ccf76;
+$G: #080;
+$Y: #d8cb59;
+$t: transparent;
+$r: #f44;
+$y: #ff4;
+$g: #4f4;
+$b: #4cf;
+
+// * Block placement *
+// parameters: x-pos,y-pos,z-pos, width,depth,height, color
+$blocks:
+  // * tree *
+  // main
+  (1,1,1, 13,13,1, $G)
+  (3,3,2, 9,9,1, $G)
+  (3,3,3, 9,9,1, $G)
+  (3,3,4, 9,9,1, $G)
+  (2,2,5, 11,11,1, $G)
+  (4,4,6, 7,7,1, $G)
+  (4,4,7, 7,7,1, $G)
+  (4,4,8, 7,7,1, $G)
+  (3,3,9, 9,9,1, $G)
+  (5,5,10, 5,5,1, $G)
+  (5,5,11, 5,5,1, $G)
+  (5,5,12, 5,5,1, $G)
+  (4,4,13, 7,7,1, $G)
+  (6,6,14, 3,3,1, $G)
+  (6,6,15, 3,3,1, $G)
+  (6,6,16, 3,3,1, $G)
+  // * ornaments *
+  // left
+  (4,7,12, 1,1,1, $y)
+  (3,9,8, 1,1,1, $b)
+  (3,5,8, 1,1,1, $r)
+  (2,10,4, 1,1,1, $r)
+  (2,7,4, 1,1,1, $g)
+  (2,4,4, 1,1,1, $y)
+  // front
+  (7,4,12, 1,1,1, $b)
+  (9,3,8, 1,1,1, $y)
+  (5,3,8, 1,1,1, $g)
+  (10,2,4, 1,1,1, $g)
+  (7,2,4, 1,1,1, $r)
+  (4,2,4, 1,1,1, $b)
+  // * star *
+  (7,7,17, 1,1,1, #d8cb59)
+  (7,6,18, 1,3,1, #d8cb59)
+  (7,7,19, 1,1,1, #d8cb59)
+  ;
+
+// * Plate placement *
+// parameters: x-pos,y-pos,z-pos, width,depth, color, x-angle,y-angle,z-angle, x-origin,y-origin
+// this plate covers certain blocks at the bottom during animation
+$plates: 
+  (0,0,1, 1,1, $t, 0,0,180, 50%,50%);
+
+@mixin placeBlock($x, $y, $z, $w, $d, $h, $c) {
+  display: inherit;
+  transform: translate3d(
+    $sqSize*($x - 1),
+    $sqSize*(-$y - ($d - 1)),
+    ($sqSize*$z) + ($sqSize*($h - 1))
+  );
+  .block-inner div {
+    background-color: $c;
+	&.top, &.bottom {
+      width: $sqSize * $w;
+      height: $sqSize * $d;
+    }
+    &.top  {
+      transform: rotateX(-90deg) translateY(-$sqSize*($d - 1));
+    }
+    &.bottom {
+      transform: rotateX(-90deg) translateY(-$sqSize*($d - 1)) translateZ($sqSize*$h);
+    }
+    &.front, &.back {
+      width: $sqSize * $w;
+      height: $sqSize * $h;
+    }
+    &.front {
+      transform: translateZ($sqSize * ($d - 1));
+    }
+    &.left, &.right {
+      width: $sqSize * $d;
+      height: $sqSize * $h;
+    }
+    &.right {
+      transform: rotateY(-270deg) translate3d($sqSize, 0, $sqSize*($w - $d));
+    }
+  }
+}
+@mixin moveBlock($x, $y, $z) {
+	transform: translate3d($sqSize * $x,$sqSize * -$y,$sqSize * $z);
+}
+@mixin placePlate($x, $y, $z, $w, $d, $c, $ax, $ay, $az, $xo, $yo) {
+	background-color: $c;
+	background-size: $sqSize $sqSize;
+	display: inherit;
+	font-size: $sqSize;
+	line-height: $sqSize;
+	width: $sqSize * $w;
+	height: $sqSize * $d;
+	transform: translate3d(
+		$sqSize*($x - 1),
+		$sqSize*(-$y + 1),
+		$sqSize*($z - 1)
+	) rotateX(0deg + $ax) rotateY(0deg + $ay) rotateZ(0deg + $az);
+	transform-origin: $xo $yo;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  height: 100vh;
+  margin: 0;
+}
+.container {
+  background-color: $LG;
+  display: flex;
+  margin: auto;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: $contW;
+  height: $contH;
+  perspective: $prsp;
+  transform-style: preserve-3d;
+}
+.surface {
+  animation: spin $dur/2 ease-out, jerk $dur/25 $dur*0.92 linear;
+  display: block;
+  width: $sqSize * $xSpaces;
+  height: $sqSize * $ySpaces;
+  margin: auto;
+  transform-style: preserve-3d;
+  transform: translateY($sqSize * $zSpaces/3) rotateX($xAngle) rotateZ($zAngle);
+  will-change: transform;
+}
+.block, .plate {
+	display: none;
+	transform-style: preserve-3d;
+	position: absolute;
+	bottom: 0;
+}
+.block-inner > div, .plate {
+	width: $sqSize;
+	height: $sqSize;
+}
+.block-inner > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  position: absolute;
+  width: $sqSize;
+  height: $sqSize;
+  &.front, &.back, &.left, &.right {
+    &:before {
+      background-color: #000;
+      content: "";
+      width: 100%;
+      height: 100%;
+    }
+  }
+  &.front, &.back {
+	&:before {
+		opacity: 0.2;
+	}
+  }
+  &.left, &.right {
+    &:before {
+	  	opacity: 0.4;
+    }
+  }
+}
+.block-outer, .block-inner {
+  position: relative;
+  width: $sqSize;
+  transform-style: preserve-3d;
+}
+.block-inner {
+  transform: rotateX(-90deg) translateZ($sqSize);
+}
+.back {
+  transform: translateZ(-$sqSize) rotateY(180deg);
+}
+.left {
+  transform-origin: center left;
+  transform: rotateY(270deg) translateX(-$sqSize);
+}
+.right {
+  transform-origin: top right;
+}
+.top, .bottom {
+  transform-origin: top center;
+}
+
+// * Render blocks *
+// one block only
+@if length(nth($blocks,1)) == 1 {
+  .b1 {
+      @include placeBlock(
+        nth($blocks, 1),
+        nth($blocks, 2),
+        nth($blocks, 3),
+        nth($blocks, 4),
+        nth($blocks, 5),
+        nth($blocks, 6),
+        nth($blocks, 7)
+      );
+    }
+}
+// more than one block
+@else {
+  @for $b from 1 through length($blocks) {
+    .b#{$b} {
+      @include placeBlock(
+        nth(nth($blocks, $b), 1),
+        nth(nth($blocks, $b), 2),
+        nth(nth($blocks, $b), 3),
+        nth(nth($blocks, $b), 4),
+        nth(nth($blocks, $b), 5),
+        nth(nth($blocks, $b), 6),
+        nth(nth($blocks, $b), 7)
+      );
+    }
+  }
+}
+// * Render plates *
+// one plate only
+@if length(nth($plates,1)) == 1 {
+	.p1 {
+		@include placePlate(
+			nth($plates, 1),
+			nth($plates, 2),
+			nth($plates, 3),
+			nth($plates, 4),
+			nth($plates, 5),
+			nth($plates, 6),
+			nth($plates, 7),
+			nth($plates, 8),
+			nth($plates, 9),
+			nth($plates, 10),
+			nth($plates, 11)
+		);
+	}
+}
+// more than one plate
+@else {
+	@for $p from 1 through length($plates) {
+		.p#{$p} {
+			@include placePlate(
+				nth(nth($plates, $p), 1),
+				nth(nth($plates, $p), 2),
+				nth(nth($plates, $p), 3),
+				nth(nth($plates, $p), 4),
+				nth(nth($plates, $p), 5),
+				nth(nth($plates, $p), 6),
+				nth(nth($plates, $p), 7),
+				nth(nth($plates, $p), 8),
+				nth(nth($plates, $p), 9),
+				nth(nth($plates, $p), 10),
+				nth(nth($plates, $p), 11)
+			);
+		}
+	}
+}
+@for $a from 1 through 28 {
+	.b#{$a} .block-outer {
+		$argsFor17_28: ($dur/3 + $dur*0.02 * ($a - 9)) linear forwards;
+		@if $a <= 16 {
+			animation: b#{$a}Move $dur/2 ease-out;
+		}
+		@elseif $a <= 22 {
+			animation: popOutLeft $dur/15 $argsFor17_28;
+		}
+		@else {
+			animation: popOutFwd $dur/15 $argsFor17_28;
+		}
+		@if $a > 16 {
+			visibility: hidden;
+		}
+	}
+}
+.block:nth-of-type(n + 29) .block-outer {
+	animation: placeDown $dur/25 $dur*0.88 linear forwards;
+	visibility: hidden;
+	.block-inner div {
+		animation: glow $dur/4 $dur*0.92 linear forwards;
+	}
+}
+/* Animations */
+@keyframes spin {
+	from {
+		transform: translateY($sqSize * $zSpaces/3) rotateX($xAngle) rotateZ($zAngle + 180) scale(0,0);
+	}
+	to {
+		transform: translateY($sqSize * $zSpaces/3) rotateX($xAngle) rotateZ($zAngle) scale(1,1);
+	}
+}
+@keyframes jerk {
+	from, to {
+		transform: translateY($sqSize * $zSpaces/3) rotateX($xAngle) rotateZ($zAngle);
+	}
+	50% {
+		transform: translateY($sqSize * $zSpaces/3 + $sqSize/2) rotateX($xAngle) rotateZ($zAngle);
+	}
+}
+@for $k from 1 through 16 {
+	@keyframes b#{$k}Move {
+		from {@include moveBlock(0,0,-$k)}
+		to {@include moveBlock(0,0,0)}
+	}
+}
+@keyframes popOutLeft {
+	from {
+		@include moveBlock(0,0,0);
+		visibility: hidden;
+	}
+	50% {
+		@include moveBlock(-0.25,0,0);
+		visibility: visible;
+	}
+	to {
+		@include moveBlock(0,0,0);
+		visibility: visible;
+	}
+}
+@keyframes popOutFwd {
+	from {
+		@include moveBlock(0,0,0);
+		visibility: hidden;
+	}
+	50% {
+		@include moveBlock(0,-0.25,0);
+		visibility: visible;
+	}
+	to {
+		@include moveBlock(0,0,0);
+		visibility: visible;
+	}
+}
+@keyframes placeDown {
+	from {
+		@include moveBlock(0,0,4);
+		visibility: hidden;
+	}
+	to {
+		@include moveBlock(0,0,0);
+		visibility: visible;
+	}
+}
+@keyframes glow {
+	from, to {
+		filter: brightness(1);
+	}
+	35% {
+		filter: brightness(2);
+	}
+}
